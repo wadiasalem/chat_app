@@ -1,9 +1,17 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import SignIn from "./activities/auth/SignIn";
 import SignUp from "./activities/auth/SignUp";
+import ChatGroup from "./activities/ChatGroup";
 import Main from "./activities/Main";
 
-const Stack = createNativeStackNavigator();
+type RootStackParamList = {
+  SignUp: undefined,
+  SignIn: undefined,
+  Main: undefined,
+  Chat: { id: String },
+}
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const Navigation = () => {
   return (
@@ -11,6 +19,7 @@ const Navigation = () => {
       <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
       <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
       <Stack.Screen name="Main" component={Main} options={{ headerShown: false }} />
+      <Stack.Screen name="Chat" component={ChatGroup} options={{ headerShown: false }} />
     </Stack.Navigator>
   )
 }

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { FC, useState } from "react";
 import { ImageBackground, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack"
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import initFirebase from "../../shared/utils/firebase";
 import { AuthError } from "@firebase/auth-types";
@@ -10,11 +10,10 @@ type RootStackParamList = {
   SignUp: undefined,
   SignIn: undefined,
 }
-interface Props {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'SignIn'>
-}
 
-const SignIn = ({ navigation }: Props) => {
+type SignInProps = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
+
+const SignIn: FC<SignInProps> = ({ navigation }) => {
 
   const auth = initFirebase.auth();
 
@@ -53,11 +52,13 @@ const SignIn = ({ navigation }: Props) => {
           }
           <TextInput style={styles.input}
             editable
+            autoComplete="email"
             onChangeText={setEmail}
             value={email}
             placeholder="email@gmail.com" />
           <TextInput style={styles.input}
             editable
+            autoComplete="password"
             onChangeText={setPassword}
             value={password}
             placeholder="***"

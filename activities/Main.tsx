@@ -1,27 +1,38 @@
 import { SafeAreaView, StatusBar, StyleSheet, Pressable, View, Platform } from "react-native";
-import { useState, ReactNode, createElement } from "react";
+import { useState, ReactNode, createElement, FC } from "react";
 import IconIonicons from 'react-native-vector-icons/Ionicons';
 import IconFontisto from 'react-native-vector-icons/Fontisto';
 import IconFeather from 'react-native-vector-icons/Feather';
 import Chat from "./main/Chat";
 import Accounts from "./main/Accounts";
 import Settings from "./main/Settings";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+type RootStackParamList = {
+  Main: undefined,
+  Chat: { id: String },
+}
+
+type MainProps = NativeStackScreenProps<RootStackParamList, 'Main'>;
 
 type activities = 'chat' | 'accounts' | 'settings';
 
-const Main = () => {
+const Main : FC<MainProps>= ({ navigation }) => {
   const [activity, setActivity] = useState<activities>('chat');
 
   const renderContent = (): ReactNode => {
     switch (activity) {
       case 'chat':
-        return createElement(Chat);
+        return createElement(Chat, { navigation: openChat });
       case 'accounts':
         return createElement(Accounts);
       case 'settings':
         return createElement(Settings);
     }
+  }
+
+  const openChat = (id: string) => {
+    navigation.push('Chat', { id: id });
   }
 
   return (

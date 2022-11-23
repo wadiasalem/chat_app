@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { ImageBackground, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack"
-import { newUser, NewUser } from "../../shared/interfaces/User";
+import { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack"
+import { newUser, NewUser, User } from "../../shared/interfaces/User";
 import { AuthError } from "@firebase/auth-types"
 import initFirebase from "../../shared/utils/firebase";
 
@@ -10,13 +10,13 @@ type RootStackParamList = {
   SignUp: undefined,
   SignIn: undefined,
 }
-interface Props {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'SignUp'>
-}
 
-const SignUp = ({ navigation }: Props) => {
+type SignUpProps = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
+
+const SignUp : FC<SignUpProps>= ({ navigation }) => {
 
   const auth = initFirebase.auth();
+  const database = initFirebase.firestore();
 
   const [error, setError] = useState<string>("");
   const [user, setUser] = useState<NewUser>(newUser);
@@ -28,6 +28,11 @@ const SignUp = ({ navigation }: Props) => {
         if (user.password == user.confirmPassword) {
           auth.createUserWithEmailAndPassword(user.email, user.password)
             .then((result) => {
+              const collection = database.collection("user");
+              collection.doc(result.user?.uid).set({
+                firstName: "",
+                lastName: "",
+              })
               navigation.replace('Main');
             })
             .catch((error: AuthError) => {
@@ -44,7 +49,7 @@ const SignUp = ({ navigation }: Props) => {
     }
   }
 
-  const updateUser = ()=>{
+  const updateUser = () => {
 
   }
 

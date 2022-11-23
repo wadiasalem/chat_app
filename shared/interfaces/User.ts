@@ -6,15 +6,15 @@ export interface NewUser {
 
 export interface User {
 
-  fisrtName: string,
+  firstName: string,
   lastName: string,
-  email: string,
+  image : string,
 }
 
-export const user: User = {
-  fisrtName: "wadia",
-  lastName: "salem",
-  email: "wadi.selem1045@gmail.com"
+export const defaultUser: User = {
+  firstName: "",
+  lastName: "",
+  image : "",
 }
 
 export const newUser: NewUser = {
