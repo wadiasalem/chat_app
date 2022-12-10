@@ -1,5 +1,5 @@
 import { SafeAreaView, StatusBar, StyleSheet, Pressable, View, Platform } from "react-native";
-import { useState, ReactNode, createElement, FC } from "react";
+import { useState, ReactNode, createElement, FC, useEffect } from "react";
 import IconIonicons from 'react-native-vector-icons/Ionicons';
 import IconFontisto from 'react-native-vector-icons/Fontisto';
 import IconFeather from 'react-native-vector-icons/Feather';
@@ -7,32 +7,36 @@ import Chat from "./main/Chat";
 import Accounts from "./main/Accounts";
 import Settings from "./main/Settings";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { User } from "@firebase/auth-types";
+import initFirebase from "../shared/utils/firebase";
 
 type RootStackParamList = {
-  Main: undefined,
-  Chat: { id: String },
+  Main: { userId: string },
+  Chat: { id: String, userId: string },
 }
 
 type MainProps = NativeStackScreenProps<RootStackParamList, 'Main'>;
 
 type activities = 'chat' | 'accounts' | 'settings';
 
-const Main : FC<MainProps>= ({ navigation }) => {
+const Main: FC<MainProps> = ({ navigation, route }) => {
+
+  const userId = route.params.userId;
   const [activity, setActivity] = useState<activities>('chat');
 
   const renderContent = (): ReactNode => {
     switch (activity) {
       case 'chat':
-        return createElement(Chat, { navigation: openChat });
+        return createElement(Chat, { navigation: openChat, userId: userId });
       case 'accounts':
-        return createElement(Accounts);
+        return createElement(Accounts, { navigation: openChat, userId: userId });
       case 'settings':
         return createElement(Settings);
     }
   }
 
   const openChat = (id: string) => {
-    navigation.push('Chat', { id: id });
+    navigation.push('Chat', { id, userId });
   }
 
   return (

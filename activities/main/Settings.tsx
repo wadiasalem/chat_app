@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View, ScrollView, Image, TouchableOpacity } from "react-native";
+import { Pressable, StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, Platform } from "react-native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { useState, useEffect } from 'react'
 import { defaultUser } from "../../shared/interfaces/User";
@@ -44,13 +44,17 @@ const Settings = () => {
     });
 
     if (!result.cancelled) {
-      const imageType = result.uri.split('.')[result.uri.split('.').length - 1];
-      const imageNameToSave = auth.currentUser?.uid + '.' + imageType;
-      const imageResult = await uploadImage(result.uri, imageNameToSave);
-      setImage(result.uri);
+      let { uri } = result;
 
-      if (me.image)
-        storage.ref(me.image).delete();
+      const nameParts = uri.split('.');
+      const imageType = nameParts[nameParts.length - 1];
+      const imageNameToSave = auth.currentUser?.uid + '.' + imageType;
+      if (Platform.OS === "android" && uri[0] === "/") {
+        uri = `file://${uri}`;
+        uri = uri.replace(/%/g, "%25");
+      }
+      const imageResult = await uploadImage(uri, imageNameToSave);
+      setImage(imageResult);
       const collection = database.collection("user");
       await collection.doc(auth.currentUser?.uid).set({ ...dbUser, image: imageResult })
         .then(async (resultUser) => {
@@ -66,7 +70,6 @@ const Settings = () => {
         resolve(xhr.response);
       };
       xhr.onerror = function (e) {
-        console.log(e);
         reject(new TypeError('Network request failed'));
       };
       xhr.responseType = 'arraybuffer';

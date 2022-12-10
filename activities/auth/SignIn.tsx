@@ -3,10 +3,10 @@ import { ImageBackground, ScrollView, StatusBar, StyleSheet, Text, TextInput, To
 import { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack"
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import initFirebase from "../../shared/utils/firebase";
-import { AuthError } from "@firebase/auth-types";
+import { AuthError, User } from "@firebase/auth-types";
 
 type RootStackParamList = {
-  Main: undefined,
+  Main: { userId: string },
   SignUp: undefined,
   SignIn: undefined,
 }
@@ -27,7 +27,9 @@ const SignIn: FC<SignInProps> = ({ navigation }) => {
       if (password.length > 6) {
         auth.signInWithEmailAndPassword(email, password)
           .then((result) => {
-            navigation.replace('Main');
+            if (result.user) {
+              navigation.replace('Main', { userId: result.user.uid });
+            }
           })
           .catch((error: AuthError) => {
             setError("Check your credentials");

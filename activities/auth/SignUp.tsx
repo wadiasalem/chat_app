@@ -6,14 +6,14 @@ import { AuthError } from "@firebase/auth-types"
 import initFirebase from "../../shared/utils/firebase";
 
 type RootStackParamList = {
-  Main: undefined,
+  Main: { userId: string },
   SignUp: undefined,
   SignIn: undefined,
 }
 
 type SignUpProps = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
-const SignUp : FC<SignUpProps>= ({ navigation }) => {
+const SignUp: FC<SignUpProps> = ({ navigation }) => {
 
   const auth = initFirebase.auth();
   const database = initFirebase.firestore();
@@ -32,8 +32,11 @@ const SignUp : FC<SignUpProps>= ({ navigation }) => {
               collection.doc(result.user?.uid).set({
                 firstName: "",
                 lastName: "",
+              }).then(userDoc => {
+                if (result.user) {
+                  navigation.replace('Main', { userId: result.user.uid });
+                }
               })
-              navigation.replace('Main');
             })
             .catch((error: AuthError) => {
               setError("Check your credentials");

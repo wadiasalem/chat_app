@@ -1,47 +1,80 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, Image, TouchableOpacity } from 'react-native';
 import initFirebase from '../utils/firebase';
+import { DocumentData, DocumentReference } from '@firebase/firestore-types';
 
 interface ChatItemProps {
-  name: string,
-  id: string,
-  lastMessage: string,
+  group: DocumentData,
+  userID: string,
   onPress: (id: string) => void
 }
 
-const ChatItem = ({ name, id, lastMessage, onPress }: ChatItemProps) => {
+const ChatItem = ({ group, userID, onPress }: ChatItemProps) => {
 
-  const database = initFirebase.firestore();
+  const rDataBase = initFirebase.database("https://tpmobile-7cc09-default-rtdb.europe-west1.firebasedatabase.app");
 
+  const [active, setActive] = useState(false);
   const [message, setMessage] = useState("");
+  const [name, setName] = useState("");
+  const [groupNextUser, setgroupNextUser] = useState<DocumentData>();
   const [messageDate, setMessageDate] = useState("");
 
   useEffect(() => {
-    database.collection('messages').doc(lastMessage).get().then(value => {
-      const msg = value.data()?.msg
-      if (msg) {
-        setMessage(msg);
+    prepareName();
+    const data = group.data();
+    const date = data.lastUpdate;
+    if (date) {
+      const toDay = new Date();
+      const dateConverted = new Date(date.toDate());
+      if (toDay.getDate() == dateConverted.getDate() && toDay.getFullYear() == dateConverted.getFullYear()) {
+        setMessageDate(dateConverted.getHours() + ':' +
+          (dateConverted.getMinutes() > 9 ? dateConverted.getMinutes() : '0' + dateConverted.getMinutes()))
+      } else {
+        setMessageDate(dateConverted.getHours() + ':' +
+          (dateConverted.getMinutes() > 9 ? dateConverted.getMinutes() : '0' + dateConverted.getMinutes()) + ' ' +
+          dateConverted.getDate() + '/' + dateConverted.getMonth() + '/' + dateConverted.getFullYear())
       }
-      const date = value.data()?.time;
-      if(date){
-        const toDay = new Date();
-        const dateConverted = new Date(date.toDate());
-        if(toDay.getDate() == dateConverted.getDate() && toDay.getFullYear() == dateConverted.getFullYear()){
-          setMessageDate(dateConverted.getHours()+':'+dateConverted.getMinutes())
-        }else{
-          setMessageDate(dateConverted.getHours()+':'+dateConverted.getMinutes()+' '+
-          dateConverted.getDate()+'/'+dateConverted.getMonth()+'/'+dateConverted.getFullYear())
+    }
+    (data.messages[data.messages.length - 1] as DocumentReference)?.get()
+      .then(value => {
+        const msg = value.data()?.msg
+        if (msg) {
+          setMessage(msg);
         }
-      }
-    });
-  }, [])
+      });
+  }, [group])
+
+  const prepareName = async () => {
+    const data = group.data();
+    if (data.type == "group") {
+      setName(group.data().name)
+      setActive(true);
+    } else {
+      const otherUserRef = data.users.filter((item: DocumentReference) => item.id != userID)[0];
+      const otherUserData = await otherUserRef.get();
+      setgroupNextUser(otherUserData.data());
+      const ref = rDataBase.ref("connection/" + otherUserRef.id);
+      ref.on('value', (snapshot) => {
+        setActive(snapshot.val());
+      }, (errorObject) => {
+      });
+      (otherUserData.data().firstName + otherUserData.data().lastName).length ?
+        setName(otherUserData.data().firstName + " " + otherUserData.data().lastName) :
+        setName("User")
+    }
+  }
 
 
   return (
-    <TouchableOpacity style={styles.cintainer} onPress={() => onPress(id)}>
+    <TouchableOpacity style={styles.cintainer} onPress={() => onPress(group.id)}>
       <View style={{ flex: .18 }}>
         <View style={styles.imageContainer}>
-          <Image source={require("../../assets/profile.webp")} resizeMode="cover" style={styles.image}></Image>
+          {
+            group.data().type == "convertion" && groupNextUser?.image ?
+              <Image source={{ uri: groupNextUser.image }} resizeMode="cover" style={styles.image} /> :
+              <Image source={require("../../assets/profile.webp")} resizeMode="cover" style={styles.image} />
+          }
+          <View style={{ ...styles.activeBull, backgroundColor: active ? "#4C8D94" : "#D0CED6" }} />
         </View>
       </View>
       <View style={{ flex: .8, paddingLeft: 20 }}>
@@ -68,27 +101,37 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     borderRadius: 50,
-    overflow: 'hidden',
     width: '100%',
     aspectRatio: 1 / 1,
 
   },
+  activeBull: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    height: "30%",
+    width: "30%",
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#FFF"
+  },
   image: {
+    borderRadius: 50,
     height: '100%',
     width: '100%'
   },
-  header : {
-    display : "flex",
-    flexDirection : "row",
+  header: {
+    display: "flex",
+    flexDirection: "row",
   },
   title: {
     flex: 1,
     fontWeight: "bold",
     fontSize: 14
   },
-  date : {
-    fontSize : 12,
-    color : "#CCCCCC"
+  date: {
+    fontSize: 12,
+    color: "#CCCCCC"
   }
 })
 

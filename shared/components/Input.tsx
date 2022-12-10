@@ -3,12 +3,13 @@ import { View, Text, TextInput, StyleSheet } from 'react-native'
 
 interface InputProps {
   value: string,
-  label?: string
+  label?: string,
+  placeholder?: string,
   handleUpdate: (value: string) => void,
   email?: boolean
 }
 
-const Input = ({ value, label, handleUpdate, email = false }: InputProps) => {
+const Input = ({ value, label, handleUpdate, email = false, placeholder }: InputProps) => {
 
   const [focus, setFocus] = useState(false);
 
@@ -19,9 +20,11 @@ const Input = ({ value, label, handleUpdate, email = false }: InputProps) => {
         <Text style={styles.label}>{label}</Text>
       }
       <TextInput value={value} style={focus ? styles.inputFocus : styles.input}
-        onChange={(value) => handleUpdate(value.nativeEvent.text)} 
+        onChange={(value) => handleUpdate(value.nativeEvent.text)}
         keyboardType={email ? 'email-address' : 'default'}
-        onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}></TextInput>
+        onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
+        placeholder={placeholder} placeholderTextColor="#33333333"
+      ></TextInput>
     </View >
   )
 }

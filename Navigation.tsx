@@ -7,8 +7,8 @@ import Main from "./activities/Main";
 type RootStackParamList = {
   SignUp: undefined,
   SignIn: undefined,
-  Main: undefined,
-  Chat: { id: String },
+  Main: { userId: string },
+  Chat: { id: string, userId: string },
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

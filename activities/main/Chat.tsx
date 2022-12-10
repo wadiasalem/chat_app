@@ -1,7 +1,6 @@
 import {
-  NativeSyntheticEvent, ScrollView, VirtualizedList, StyleSheet, Text,
-  TextInput,
-  TextInputChangeEventData, View
+  NativeSyntheticEvent, VirtualizedList, StyleSheet, RefreshControl,
+  TextInput, TextInputChangeEventData, View, TouchableOpacity
 } from "react-native";
 import Icon from "react-native-vector-icons/EvilIcons";
 import IconEntypo from "react-native-vector-icons/Entypo";
@@ -9,32 +8,46 @@ import { useEffect, useState } from "react";
 import initFirebase from "../../shared/utils/firebase";
 import { DocumentData } from "@firebase/firestore-types"
 import ChatItem from "../../shared/components/ChatItem";
+import Popup from "../../shared/components/Popup";
+import NewGroup from "./NewGroup";
 
 interface ChatProps {
+  userId: string
   navigation: (id: string) => void
 }
 
-const Chat = ({ navigation }: ChatProps) => {
+const Chat = ({ navigation, userId }: ChatProps) => {
 
-  const auth = initFirebase.auth();
   const database = initFirebase.firestore();
 
   const [searchFocus, setsearchFocus] = useState(false);
   const [messageGroups, setMessageGroups] = useState<Array<DocumentData>>([]);
   const [messageGroupsFiltred, setMessageGroupsFiltred] = useState<Array<DocumentData>>([]);
+  const [refreshing, setRefreshing] = useState(true);
+
+  const [openModal, setopenModal] = useState(false);
 
   useEffect(() => {
-    database.collection("groups").get().then(groups => {
-      const docs = groups.docs.filter(doc => {
-        const user = doc.data().users.find((user: any) => {
-          return user.id == auth.currentUser?.uid
-        })
-        return user;
-      })
-      setMessageGroups(docs);
-      setMessageGroupsFiltred(docs);
-    })
+    getGroups();
   }, [])
+
+  const getGroups = () => {
+    setRefreshing(true)
+    database.collection("user").doc(userId).get().then(user => {
+      database.collection("groups")
+        .where(
+          "users",
+          "array-contains",
+          user.ref
+        )
+        .orderBy('lastUpdate', 'desc')
+        .onSnapshot(groups => {
+          setRefreshing(false);
+          setMessageGroups(groups.docs);
+          setMessageGroupsFiltred(groups.docs);
+        })
+    })
+  }
 
   const search = (value: NativeSyntheticEvent<TextInputChangeEventData>) => {
     setMessageGroupsFiltred(
@@ -47,6 +60,9 @@ const Chat = ({ navigation }: ChatProps) => {
 
   return (
     <View style={{ flex: 1 }}>
+      <Popup openPopup={openModal} closePopup={() => setopenModal(false)}>
+        <NewGroup onCreate={(id) => { setopenModal(false); navigation(id) }} />
+      </Popup>
       <View style={styles.header}>
         <View style={{ ...styles.searchContainer, borderBottomColor: searchFocus ? "#601775" : "#999999" }}>
           <Icon name="search" size={25} color="#999999"></Icon>
@@ -54,15 +70,22 @@ const Chat = ({ navigation }: ChatProps) => {
             onBlur={() => setsearchFocus(false)} selectionColor="#601775"
             placeholder="Search ..." onChange={search}></TextInput>
         </View>
-        <IconEntypo name="new-message" size={25} color="#666666"></IconEntypo>
+        <TouchableOpacity onPress={() => setopenModal(true)}>
+          <IconEntypo name="new-message" size={25} color="#666666"></IconEntypo>
+        </TouchableOpacity>
       </View>
       <VirtualizedList
         data={messageGroupsFiltred}
         initialNumToRender={4}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={getGroups}
+          />
+        }
         renderItem={(item) => {
-          const messageId = item.item.data().messages[item.item.data().messages.length - 1].id
-          return <ChatItem onPress={navigation} name={item.item.data().name}
-            id={item.item.id} lastMessage={messageId} />
+          return <ChatItem onPress={navigation} userID={userId}
+            group={item.item} />
         }}
         keyExtractor={(item: DocumentData) => item.id}
         getItemCount={(data) => data.length}
